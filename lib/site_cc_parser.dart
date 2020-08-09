@@ -10,7 +10,7 @@ import 'package:html/parser.dart' show parse;
 const _BASE_URL_SITE_UFFS = 'https://cc.uffs.edu.br';
 
 abstract class Scrapper {
-  static Future<dynamic> getContentFromUrl(String url) async {
+  static Future<HtmlParsed> getContentFromUrl(String url) async {
     await initializeDateFormatting('pt_BR', null);
 
     final res = await http.get(url);
@@ -18,7 +18,7 @@ abstract class Scrapper {
 
     final article = document.querySelector('#content');
 
-    final list = [];
+    final List<Map<String, String>> list = [];
 
     for (var i = 0; i < article.children.length; i++) {
       final element = article.children[i];
@@ -26,7 +26,6 @@ abstract class Scrapper {
       if (element.localName == 'p') {
         if (element.children.isNotEmpty &&
             element.children[0].localName == 'img') {
-
           if (element.children[0].localName == 'img') {
             list.add({HtmlParsed.img: element.children[0].attributes['src']});
           }
@@ -45,7 +44,7 @@ abstract class Scrapper {
       }
     }
 
-    return list;
+    return HtmlParsed(list);
   }
 
   static Future<List<ParserSiteResponse>> getNews() async {
@@ -157,6 +156,16 @@ class ParserSiteResponse {
     return map.map((item) => ParserSiteResponse.fromJson(item)).toList();
   }
 
+  Future<bool> fetchUrlContent() async {
+    try {
+      final html = await Scrapper.getContentFromUrl(this.url);
+      this.htmlContent = html;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   factory ParserSiteResponse.fromJson(dynamic jsonEncoded) {
     final Map<String, dynamic> map =
         json.decode(jsonEncoded).cast<Map<String, dynamic>>();
@@ -177,8 +186,11 @@ class ParserSiteResponse {
 }
 
 // void main() async {
-//   final a = (await Scrapper.getContentFromUrl(
-//       'https://cc.uffs.edu.br/noticias/programa-practice/'));
-//   print(a);
-//   // print(a[0].listToString(a));
+//   // final a = (await Scrapper.getNews(
+//   //     'https://cc.uffs.edu.br/noticias/programa-practice/'));
+//   final a = await Scrapper.getNews();
+//   // print(a);
+//   await a[0].fetchUrlContent();
+
+//   print(a[0].htmlContent.items);
 // }
