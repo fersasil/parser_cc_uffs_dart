@@ -9,6 +9,8 @@ import 'package:html/parser.dart' show parse;
 
 const _BASE_URL_SITE_UFFS = 'https://cc.uffs.edu.br';
 
+enum FetchContentFrom { news, posts, vacancies }
+
 abstract class Scrapper {
   static Future<HtmlParsed> getContentFromUrl(String url) async {
     await initializeDateFormatting('pt_BR', null);
@@ -47,10 +49,20 @@ abstract class Scrapper {
     return HtmlParsed(list);
   }
 
-  static Future<List<ParserSiteResponse>> getNews() async {
+  static Future<List<ParserSiteResponse>> getContent(
+      FetchContentFrom from) async {
     await initializeDateFormatting('pt_BR', null);
 
-    final res = await http.get(_BASE_URL_SITE_UFFS + '/noticias');
+    String url;
+
+    if (from == FetchContentFrom.news)
+      url = '/noticias';
+    else if (from == FetchContentFrom.posts)
+      url = '/postagens';
+    else
+      url = '/vagas';
+
+    final res = await http.get(_BASE_URL_SITE_UFFS + url);
 
     final document = parse(res.body);
 
@@ -72,14 +84,6 @@ abstract class Scrapper {
 
       final date = DateTime.parse(liTags[1].text.trim());
 
-      // final days = DateTime.now().difference(date); // / 864 * 100000;
-      // if (days.inDays <= 2) {
-      //   if (days.inDays == 0)
-      //     formatedDate = 'Hoje';
-      //   else if (days.inDays == 1)
-      //     formatedDate = 'Ontem';
-      //   else if (days.inDays == 2) formatedDate = 'Anteontem';
-      // } else
       formatedDate = DateFormat("d 'de' MMM 'de y", 'pt-br').format(date);
 
       return ParserSiteResponse(
@@ -184,13 +188,3 @@ class ParserSiteResponse {
     );
   }
 }
-
-// void main() async {
-//   // final a = (await Scrapper.getNews(
-//   //     'https://cc.uffs.edu.br/noticias/programa-practice/'));
-//   final a = await Scrapper.getNews();
-//   // print(a);
-//   await a[0].fetchUrlContent();
-
-//   print(a[0].htmlContent.items);
-// }
